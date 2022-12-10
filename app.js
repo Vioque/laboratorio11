@@ -42,8 +42,7 @@ class ReservaWeb {
     }
 
     calculaCargoAdicional(pax, noches) {
-        const cargo = pax > 1 ? 40 * (pax - 1) * noches : 0
-        return cargo
+        return pax > 1 ? 40 * (pax - 1) * noches : 0
     }
 
     calculaSubtotal() {
@@ -84,7 +83,7 @@ console.log('Caso 1 Total ampliación reserva: ', booking.total)
  * Tour operador, se aplican condiciones especiales */
 class TourOperador extends ReservaWeb {
     calculaSubtotal() {
-        this._subtotal = reservas.reduce((acc, { pax, noches }) =>
+        this._subtotal = this._reserva.reduce((acc, { pax, noches }) =>
             acc + 100 * noches + this.calculaCargoAdicional(pax, noches), 0)
     }
 
@@ -103,7 +102,7 @@ console.log('Total Tour Operador con descuento: ', tourOperador.total)
 class ClaseBase {
     constructor() {
         this._reservaDesafio = []
-        this._precioHabitacion = {
+        this._tipoHabitacion = {
             standard: 100,
             suite: 150
         }
@@ -111,15 +110,20 @@ class ClaseBase {
         this._totalDesafio = 0
     }
 
-    cargoAdicional(acc, pax, noches) {
-        const cargoAdicional = pax > 1 ? 40 * (pax - 1) * noches : 0
-        if reservas[acc].desayuno { cargoAdicional += 15 * pax * noches }
+    cargoAdicional(pax, noches, desayuno) {
+        let cargoAdicional = pax > 1 ? 40 * (pax - 1) * noches : 0
+        desayuno ? cargoAdicional += 15 * pax * noches : 0
         return cargoAdicional
     }
 
     calculaSubtotal() {
-        this._subtotalDesafio = reservas.reduce((acc, { costeHabitacion, pax, noches }) =>
-            acc + costeHabitacion * noches + this.cargoAdicional(acc, pax, noches), 0)
+        this._subtotalDesafio = this._reservaDesafio.reduce((acc, { tipoHabitacion, pax, noches, desayuno }) => {
+            let precio = 0
+            for (const [clave, valor] of Object.entries(this._tipoHabitacion)) {
+                if (clave === tipoHabitacion) precio = valor
+            }
+            return acc + precio * noches + this.cargoAdicional(pax, noches, desayuno)
+        }, 0)
     }
 
     get subtotal() {
@@ -130,7 +134,7 @@ class ClaseBase {
         this._totalDesafio = this._subtotalDesafio * 1.21
     }
 
-    get calculaTotal() {
+    get total() {
         return this._totalDesafio
     }
 
@@ -141,7 +145,37 @@ class ClaseBase {
     }
 }
 
-const BookingCliente = new ClaseBase()
+class Cliente extends ClaseBase {
+    constructor() {
+        super()
+        this.calculaSubtotal()
+    }
+}
+
+class Profesional extends ClaseBase {
+    constructor() {
+        super()
+        this._tipoHabitacion = {
+            standard: 100,
+            suite: 100
+        }
+    }
+
+    calculaTotal() {
+        this._totalDesafio = ((this._subtotalDesafio / 1.15) * 1.21).toFixed(2)
+    }
+}
+
+const BookingCliente = new Cliente()
 BookingCliente.reservaDesafio = reservas
 
-class Cliente
+console.log('Subtotal Cliente: ', BookingCliente.subtotal)
+console.log('Total Cliente: ', BookingCliente.total)
+
+const BookingProfesional = new Profesional()
+BookingProfesional.reservaDesafio = reservas
+
+console.log('Subtotal Profesional: ', BookingProfesional.subtotal)
+console.log('Total Profesional: ', BookingProfesional.total)
+
+
